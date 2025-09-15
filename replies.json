@@ -1,0 +1,35 @@
+{
+  "greetings": {
+    "keywords": ["hi", "hello", "hey", "good morning"],
+    "reply_type": "text",
+    "reply": "Hello! How can I help you today?"
+  },
+  "help": {
+    "keywords": ["help", "support"],
+    "reply_type": "text",
+    "reply": "Sure! You can ask me about our services, pricing, or support."
+  },
+  "promo": {
+    "keywords": ["offer", "discount", "sale"],
+    "reply_type": "image",
+    "reply": {
+      "link": "https://example.com/promo.jpg",
+      "caption": "Check out our latest offer!"
+    }
+  },
+  "quick_test": {
+    "keywords": ["buttons", "test buttons"],
+    "reply_type": "buttons",
+    "reply": {
+      "text": "Choose an option:",
+      "buttons": [
+        { "type": "reply", "reply": { "id": "btn_1", "title": "Option 1" } },
+        { "type": "reply", "reply": { "id": "btn_2", "title": "Option 2" } }
+      ]
+    },
+    "button_responses": {
+      "btn_1": { "reply_type": "text", "reply": "You chose Option 1!" },
+      "btn_2": { "reply_type": "text", "reply": "You chose Option 2!" }
+    }
+  }
+}
