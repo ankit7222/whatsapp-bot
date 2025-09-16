@@ -35,7 +35,7 @@ async function sendText(to, text) {
   return sendMessage(to, { text: { body: text } });
 }
 
-// ================== GREETING WITH BUTTONS + IMAGE ==================
+// ================== GREETING ==================
 async function sendGreeting(to) {
   await sendMessage(to, {
     type: "interactive",
@@ -46,7 +46,7 @@ async function sendGreeting(to) {
         image: { link: "https://www.kalagato.ai/logo.png" } // Replace with your image
       },
       body: {
-        text: "👋 Welcome to KalaGato!\nWe help you sell and evaluate apps professionaly..\n\nChoose an option below:"
+        text: "👋 Welcome to KalaGato*!\nWe help you sell and evaluate apps professionaly..\n\nChoose an option below:"
       },
       action: {
         buttons: [
@@ -58,15 +58,15 @@ async function sendGreeting(to) {
     }
   });
 
-  // ✅ Set initial state after greeting
+  // Initialize user state
   user_states[to] = "greeted";
+  if (!user_answers[to]) user_answers[to] = {};
 }
 
 // ================== BUTTON HANDLER ==================
 async function handleButton(from, buttonId) {
   if (buttonId === "sell") {
     user_states[from] = "app_name";
-    user_answers[from] = {};
     await sendText(from, "📱 Please provide your App Name:");
 
   } else if (buttonId === "valuation") {
@@ -98,15 +98,10 @@ async function handleRevenueButton(from, buttonId) {
 
 // ================== TEXT HANDLER ==================
 async function handleText(from, text) {
-  if (!user_states[from]) {
-    return sendGreeting(from);
-  }
-
   switch (user_states[from]) {
     case "greeted":
-      // user typed something instead of clicking button
       await sendText(from, "Please select an option using the buttons below.");
-      await sendGreeting(from); // resend buttons
+      await sendGreeting(from);
       break;
 
     case "app_name":
@@ -197,6 +192,28 @@ async function summarizeResponses(user) {
   }
 }
 
+// ================== UNIFIED MESSAGE HANDLER ==================
+async function handleIncomingMessage(from, msg) {
+  if (!user_answers[from]) user_answers[from] = {};
+  if (!user_states[from]) user_states[from] = "greeted";
+
+  if (msg.type === "interactive" && msg.interactive.type === "button_reply") {
+    const buttonId = msg.interactive.button_reply.id;
+
+    if (["sell", "valuation", "website"].includes(buttonId)) {
+      await handleButton(from, buttonId);
+    } else {
+      await handleRevenueButton(from, buttonId);
+    }
+  } else if (msg.type === "text") {
+    await handleText(from, msg.text.body);
+  } else {
+    // fallback for unsupported types
+    await sendText(from, "Please use the buttons to proceed.");
+    if (user_states[from] === "greeted") await sendGreeting(from);
+  }
+}
+
 // ================== WEBHOOKS ==================
 app.get("/webhook", (req, res) => {
   const mode = req.query["hub.mode"];
@@ -212,25 +229,13 @@ app.get("/webhook", (req, res) => {
 
 app.post("/webhook", async (req, res) => {
   const data = req.body;
-
   if (data.object === "whatsapp_business_account") {
     for (const entry of data.entry || []) {
       for (const change of entry.changes || []) {
         const value = change.value;
         const messages = value.messages || [];
         for (const msg of messages) {
-          const from = msg.from;
-
-          if (msg.type === "text") {
-            await handleText(from, msg.text.body);
-          } else if (msg.type === "interactive") {
-            const buttonId = msg.interactive.button_reply.id;
-            if (["sell", "valuation", "website"].includes(buttonId)) {
-              await handleButton(from, buttonId);
-            } else {
-              await handleRevenueButton(from, buttonId);
-            }
-          }
+          await handleIncomingMessage(msg.from, msg);
         }
       }
     }
