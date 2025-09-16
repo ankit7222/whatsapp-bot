@@ -43,10 +43,10 @@ async function sendGreeting(to) {
       type: "button",
       header: {
         type: "image",
-        image: { link: "https://www.kalagato.ai/logo.png" } // <-- replace with your image
+        image: { link: "https://www.kalagato.ai/logo.png" } // Replace with your image
       },
       body: {
-        text: "👋 Welcome to KalaGato!\nWe help you sell and evaluate apps professionaly.\n\nChoose an option below:"
+        text: "👋 Welcome to KalaGato!\nWe help you sell and evaluate apps professionaly..\n\nChoose an option below:"
       },
       action: {
         buttons: [
@@ -57,6 +57,9 @@ async function sendGreeting(to) {
       }
     }
   });
+
+  // ✅ Set initial state after greeting
+  user_states[to] = "greeted";
 }
 
 // ================== BUTTON HANDLER ==================
@@ -100,6 +103,12 @@ async function handleText(from, text) {
   }
 
   switch (user_states[from]) {
+    case "greeted":
+      // user typed something instead of clicking button
+      await sendText(from, "Please select an option using the buttons below.");
+      await sendGreeting(from); // resend buttons
+      break;
+
     case "app_name":
       user_answers[from].app_name = text;
       user_states[from] = "app_link";
