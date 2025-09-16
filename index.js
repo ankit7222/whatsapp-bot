@@ -35,7 +35,7 @@ async function sendText(to, text) {
   return sendMessage(to, { text: { body: text } });
 }
 
-// ================== GREETING WITH BUTTONS + IMAGE ==================
+// ================== GREETING WITH BUTTONS ==================
 async function sendGreeting(to) {
   if (!user_answers[to]) user_answers[to] = {};
   user_states[to] = "greeted";
@@ -44,12 +44,8 @@ async function sendGreeting(to) {
     type: "interactive",
     interactive: {
       type: "button",
-      header: {
-        type: "image",
-        image: { link: "https://example.com/your-company-logo.png" } // Replace with your logo
-      },
       body: {
-        text: "👋 Welcome to *Your Company*!\nWe help app founders with growth, buying/selling, and valuation.\n\nChoose an option below:"
+        text: "👋 Welcome to KalaGato!\nWe help app founders with growth, buying/selling, and valuation.\n\nChoose an option below:"
       },
       action: {
         buttons: [
@@ -70,10 +66,10 @@ async function handleButton(from, buttonId) {
       await sendText(from, "📱 Please provide your App Name:");
       break;
     case "valuation":
-      await sendText(from, "📊 Use our valuation calculator: https://your-valuation-link.com");
+      await sendText(from, "📊 Use our valuation calculator: https://www.kalagato.ai/app-valuation-calculator);
       break;
     case "website":
-      await sendText(from, "🌐 Visit our website: https://your-website.com");
+      await sendText(from, "🌐 Visit our website: https://www.kalagato.ai");
       break;
     case "inapp":
     case "subs":
@@ -118,7 +114,6 @@ async function handleRevenueButton(from, buttonId) {
 async function handleText(from, text) {
   switch (user_states[from]) {
     case "greeted":
-      // User typed instead of clicking button
       await sendText(from, "Please click one of the buttons below to proceed.");
       await sendGreeting(from);
       break;
