@@ -35,23 +35,19 @@ async function sendText(to, text) {
   return sendMessage(to, { text: { body: text } });
 }
 
-// ================== GREETING ==================
+// ================== GREETING WITH BUTTONS + IMAGE ==================
 async function sendGreeting(to) {
-  // 1️⃣ Send image with caption
-  await sendMessage(to, {
-    type: "image",
-    image: {
-      link: "https://www.kalagato.ai/logo.png", // Replace with your image URL
-      caption: "👋 Welcome to KalaGato!\nWe help you sell and evaluate apps professionaly."
-    }
-  });
-
-  // 2️⃣ Send buttons immediately after
   await sendMessage(to, {
     type: "interactive",
     interactive: {
       type: "button",
-      body: { text: "Please select one option below:" },
+      header: {
+        type: "image",
+        image: { link: "https://www.kalagato.ai/logo.png" } // <-- replace with your image
+      },
+      body: {
+        text: "👋 Welcome to KalaGato!\nWe help you sell and evaluate apps professionaly.\n\nChoose an option below:"
+      },
       action: {
         buttons: [
           { type: "reply", reply: { id: "sell", title: "📱 Sell" } },
@@ -74,7 +70,7 @@ async function handleButton(from, buttonId) {
     await sendText(from, "📊 Use our valuation calculator: https://www.kalagato.ai/app-valuation-calculator");
 
   } else if (buttonId === "website") {
-    await sendText(from, "🌐 Visit our website: https://kalagato.ai");
+    await sendText(from, "🌐 Visit our website: https://www.kalagato.ai");
   }
 }
 
