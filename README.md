@@ -1,12 +1,15 @@
 # WhatsApp Bot
 
-Advanced WhatsApp bot using Node.js and WhatsApp Cloud API.
+A WhatsApp Cloud API bot built with Node.js and Express.  
+It supports:
+- Greeting with company image and intro
+- Buttons for "Sell"
+- Hyperlinks for Valuation Calculator & Website
+- Multi-step questionnaire (Revenue → Marketing → DAU → MAU → Retention → Summary)
 
-## Features
-- Responds to keywords with text, images, and buttons
-- Handles button taps dynamically
-- Hot-reloads `replies.json` without redeploying
-- Logs unknown messages for review
+## 🚀 Setup
 
-## Setup
-1. Create `.env` file with:
+1. Clone this repo:
+   ```bash
+   git clone https://github.com/ankit7222/whatsapp-bot.git
+   cd whatsapp-bot
