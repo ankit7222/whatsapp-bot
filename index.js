@@ -35,8 +35,11 @@ async function sendText(to, text) {
   return sendMessage(to, { text: { body: text } });
 }
 
-// ================== GREETING ==================
+// ================== GREETING WITH BUTTONS + IMAGE ==================
 async function sendGreeting(to) {
+  if (!user_answers[to]) user_answers[to] = {};
+  user_states[to] = "greeted";
+
   await sendMessage(to, {
     type: "interactive",
     interactive: {
@@ -46,7 +49,7 @@ async function sendGreeting(to) {
         image: { link: "https://www.kalagato.ai/logo.png" } // Replace with your image
       },
       body: {
-        text: "👋 Welcome to KalaGato*!\nWe help you sell and evaluate apps professionaly..\n\nChoose an option below:"
+        text: "👋 Welcome to KalaGato!\nWe help you sell and evaluate apps professionaly.\n\nChoose an option below:"
       },
       action: {
         buttons: [
@@ -57,23 +60,38 @@ async function sendGreeting(to) {
       }
     }
   });
-
-  // Initialize user state
-  user_states[to] = "greeted";
-  if (!user_answers[to]) user_answers[to] = {};
 }
 
 // ================== BUTTON HANDLER ==================
 async function handleButton(from, buttonId) {
-  if (buttonId === "sell") {
-    user_states[from] = "app_name";
-    await sendText(from, "📱 Please provide your App Name:");
-
-  } else if (buttonId === "valuation") {
-    await sendText(from, "📊 Use our valuation calculator: https://www.kalagato.ai/app-valuation-calculator");
-
-  } else if (buttonId === "website") {
-    await sendText(from, "🌐 Visit our website: https://www.kalagato.ai");
+  switch (buttonId) {
+    case "sell":
+      user_states[from] = "app_name";
+      await sendText(from, "📱 Please provide your App Name:");
+      break;
+    case "valuation":
+      await sendText(from, "📊 Use our valuation calculator: https://www.kalagato.ai/app-valuation-calculator");
+      break;
+    case "website":
+      await sendText(from, "🌐 Visit our website: https://www.kalagato.ai");
+      break;
+    case "inapp":
+    case "subs":
+    case "ads":
+    case "all":
+      await handleRevenueButton(from, buttonId);
+      break;
+    case "marketing_yes":
+      user_states[from] = "marketing_amount";
+      await sendText(from, "💰 How much did you spend on marketing in the last 12 months?");
+      break;
+    case "marketing_no":
+      user_answers[from].marketing_spend = "No";
+      user_states[from] = "dau";
+      await sendText(from, "👥 What is your DAU (Daily Active Users)?");
+      break;
+    default:
+      break;
   }
 }
 
@@ -99,17 +117,11 @@ async function handleRevenueButton(from, buttonId) {
 // ================== TEXT HANDLER ==================
 async function handleText(from, text) {
   switch (user_states[from]) {
-    case "greeted":
-      await sendText(from, "Please select an option using the buttons below.");
-      await sendGreeting(from);
-      break;
-
     case "app_name":
       user_answers[from].app_name = text;
       user_states[from] = "app_link";
       await sendText(from, "🔗 Please share your App Link (Play Store / App Store / Website):");
       break;
-
     case "app_link":
       user_answers[from].app_link = text;
       user_states[from] = "revenue";
@@ -129,44 +141,28 @@ async function handleText(from, text) {
         }
       });
       break;
-
     case "marketing_amount":
       user_answers[from].marketing_spend = text;
       user_states[from] = "dau";
       await sendText(from, "👥 What is your DAU (Daily Active Users)?");
       break;
-
     case "dau":
       user_answers[from].dau = text;
       user_states[from] = "mau";
       await sendText(from, "👥 What is your MAU (Monthly Active Users)?");
       break;
-
     case "mau":
       user_answers[from].mau = text;
       user_states[from] = "retention";
       await sendText(from, "📊 Please provide your retention rates (Day 1, Day 7, Day 30):");
       break;
-
     case "retention":
       user_answers[from].retention = text;
       user_states[from] = "done";
       await summarizeResponses(from);
       break;
-
-    case "marketing_spend":
-      if (text.toLowerCase() === "yes") {
-        user_states[from] = "marketing_amount";
-        await sendText(from, "💰 How much did you spend on marketing in the last 12 months?");
-      } else {
-        user_answers[from].marketing_spend = "No";
-        user_states[from] = "dau";
-        await sendText(from, "👥 What is your DAU (Daily Active Users)?");
-      }
-      break;
-
     default:
-      await sendGreeting(from);
+      // For users who type instead of clicking buttons, just ignore text
       break;
   }
 }
@@ -192,29 +188,7 @@ async function summarizeResponses(user) {
   }
 }
 
-// ================== UNIFIED MESSAGE HANDLER ==================
-async function handleIncomingMessage(from, msg) {
-  if (!user_answers[from]) user_answers[from] = {};
-  if (!user_states[from]) user_states[from] = "greeted";
-
-  if (msg.type === "interactive" && msg.interactive.type === "button_reply") {
-    const buttonId = msg.interactive.button_reply.id;
-
-    if (["sell", "valuation", "website"].includes(buttonId)) {
-      await handleButton(from, buttonId);
-    } else {
-      await handleRevenueButton(from, buttonId);
-    }
-  } else if (msg.type === "text") {
-    await handleText(from, msg.text.body);
-  } else {
-    // fallback for unsupported types
-    await sendText(from, "Please use the buttons to proceed.");
-    if (user_states[from] === "greeted") await sendGreeting(from);
-  }
-}
-
-// ================== WEBHOOKS ==================
+// ================== WEBHOOK ==================
 app.get("/webhook", (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
@@ -229,20 +203,31 @@ app.get("/webhook", (req, res) => {
 
 app.post("/webhook", async (req, res) => {
   const data = req.body;
+
   if (data.object === "whatsapp_business_account") {
     for (const entry of data.entry || []) {
       for (const change of entry.changes || []) {
         const value = change.value;
         const messages = value.messages || [];
         for (const msg of messages) {
-          await handleIncomingMessage(msg.from, msg);
+          const from = msg.from;
+
+          if (!user_answers[from]) user_answers[from] = {};
+          if (!user_states[from]) user_states[from] = "greeted";
+
+          if (msg.type === "interactive" && msg.interactive.type === "button_reply") {
+            await handleButton(from, msg.interactive.button_reply.id);
+          } else if (msg.type === "text") {
+            await handleText(from, msg.text.body);
+          }
         }
       }
     }
   }
+
   res.sendStatus(200);
 });
 
 // ================== START SERVER ==================
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("Server is running on port " + PORT));
+app.listen(PORT, () => console.log("Server running on port " + PORT));
