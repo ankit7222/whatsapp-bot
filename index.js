@@ -1,6 +1,6 @@
-import express from "express";
-import bodyParser from "body-parser";
-import fetch from "node-fetch";
+const express = require("express");
+const bodyParser = require("body-parser");
+const fetch = require("node-fetch");
 
 const app = express();
 app.use(bodyParser.json());
@@ -46,10 +46,10 @@ async function sendGreeting(to) {
       type: "button",
       header: {
         type: "image",
-        image: { link: "https://www.kalagato.ai/logo.png" } // Replace with your logo
+        image: { link: "https://example.com/your-company-logo.png" } // Replace with your logo
       },
       body: {
-        text: "👋 Welcome to KalaGato!\nWe help you sell and evaluate apps professionaly.\n\nChoose an option below:"
+        text: "👋 Welcome to *Your Company*!\nWe help app founders with growth, buying/selling, and valuation.\n\nChoose an option below:"
       },
       action: {
         buttons: [
@@ -70,10 +70,10 @@ async function handleButton(from, buttonId) {
       await sendText(from, "📱 Please provide your App Name:");
       break;
     case "valuation":
-      await sendText(from, "📊 Use our valuation calculator: https://www.kalagato.ai/app-valuation-calculator");
+      await sendText(from, "📊 Use our valuation calculator: https://your-valuation-link.com");
       break;
     case "website":
-      await sendText(from, "🌐 Visit our website: https://www.kalagato.ai");
+      await sendText(from, "🌐 Visit our website: https://your-website.com");
       break;
     case "inapp":
     case "subs":
@@ -248,4 +248,6 @@ app.post("/webhook", async (req, res) => {
   res.sendStatus(200);
 });
 
-//
+// ================== START SERVER ==================
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log("Server running on port " + PORT));
