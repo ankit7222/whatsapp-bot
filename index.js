@@ -46,7 +46,7 @@ async function sendGreeting(to) {
       type: "button",
       header: {
         type: "image",
-        image: { link: "https://www.kalagato.ai/logo.png" } // Replace with your image
+        image: { link: "https://www.kalagato.ai/logo.png" } // Replace with your logo
       },
       body: {
         text: "👋 Welcome to KalaGato!\nWe help you sell and evaluate apps professionaly.\n\nChoose an option below:"
@@ -117,6 +117,11 @@ async function handleRevenueButton(from, buttonId) {
 // ================== TEXT HANDLER ==================
 async function handleText(from, text) {
   switch (user_states[from]) {
+    case "greeted":
+      // User typed instead of clicking button
+      await sendText(from, "Please click one of the buttons below to proceed.");
+      await sendGreeting(from);
+      break;
     case "app_name":
       user_answers[from].app_name = text;
       user_states[from] = "app_link";
@@ -161,8 +166,18 @@ async function handleText(from, text) {
       user_states[from] = "done";
       await summarizeResponses(from);
       break;
+    case "marketing_spend":
+      if (text.toLowerCase() === "yes") {
+        user_states[from] = "marketing_amount";
+        await sendText(from, "💰 How much did you spend on marketing in the last 12 months?");
+      } else {
+        user_answers[from].marketing_spend = "No";
+        user_states[from] = "dau";
+        await sendText(from, "👥 What is your DAU (Daily Active Users)?");
+      }
+      break;
     default:
-      // For users who type instead of clicking buttons, just ignore text
+      await sendGreeting(from);
       break;
   }
 }
@@ -188,7 +203,21 @@ async function summarizeResponses(user) {
   }
 }
 
-// ================== WEBHOOK ==================
+// ================== UNIFIED MESSAGE HANDLER ==================
+async function handleIncomingMessage(from, msg) {
+  if (!user_answers[from]) user_answers[from] = {};
+  if (!user_states[from]) user_states[from] = "greeted";
+
+  if (msg.type === "interactive" && msg.interactive.type === "button_reply") {
+    await handleButton(from, msg.interactive.button_reply.id);
+  } else if (msg.type === "text") {
+    await handleText(from, msg.text.body);
+  } else {
+    await sendText(from, "Please click one of the buttons to proceed.");
+  }
+}
+
+// ================== WEBHOOKS ==================
 app.get("/webhook", (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
@@ -210,16 +239,7 @@ app.post("/webhook", async (req, res) => {
         const value = change.value;
         const messages = value.messages || [];
         for (const msg of messages) {
-          const from = msg.from;
-
-          if (!user_answers[from]) user_answers[from] = {};
-          if (!user_states[from]) user_states[from] = "greeted";
-
-          if (msg.type === "interactive" && msg.interactive.type === "button_reply") {
-            await handleButton(from, msg.interactive.button_reply.id);
-          } else if (msg.type === "text") {
-            await handleText(from, msg.text.body);
-          }
+          await handleIncomingMessage(msg.from, msg);
         }
       }
     }
@@ -228,6 +248,4 @@ app.post("/webhook", async (req, res) => {
   res.sendStatus(200);
 });
 
-// ================== START SERVER ==================
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("Server running on port " + PORT));
+//
