@@ -35,23 +35,23 @@ async function sendText(to, text) {
   return sendMessage(to, { text: { body: text } });
 }
 
-// Send greeting with image and buttons
-async function sendImageWithButtons(to) {
-  // 1️⃣ Send Image with caption
+// ================== GREETING ==================
+async function sendGreeting(to) {
+  // 1️⃣ Send image with caption
   await sendMessage(to, {
     type: "image",
     image: {
-      link: "https://www.kalagato.ai/logo.png", // <-- Replace with your image link
-      caption: "👋 Welcome to KalaGato!\nWe help you sell and evauluate apps professionaly.\n\nChoose an option below 👇"
+      link: "https://www.kalagato.ai/logo.png", // Replace with your image URL
+      caption: "👋 Welcome to KalaGato!\nWe help you sell and evaluate apps professionaly."
     }
   });
 
-  // 2️⃣ Send buttons
+  // 2️⃣ Send buttons immediately after
   await sendMessage(to, {
     type: "interactive",
     interactive: {
       type: "button",
-      body: { text: "Please select one option:" },
+      body: { text: "Please select one option below:" },
       action: {
         buttons: [
           { type: "reply", reply: { id: "sell", title: "📱 Sell" } },
@@ -74,11 +74,10 @@ async function handleButton(from, buttonId) {
     await sendText(from, "📊 Use our valuation calculator: https://www.kalagato.ai/app-valuation-calculator");
 
   } else if (buttonId === "website") {
-    await sendText(from, "🌐 Visit our website: https://www.kalagato.ai/");
+    await sendText(from, "🌐 Visit our website: https://kalagato.ai");
   }
 }
 
-// Revenue source buttons
 async function handleRevenueButton(from, buttonId) {
   const map = { inapp: "In-App Purchases", subs: "Subscriptions", ads: "Ad Revenue", all: "All Sources" };
   user_answers[from].revenue = map[buttonId];
@@ -101,7 +100,7 @@ async function handleRevenueButton(from, buttonId) {
 // ================== TEXT HANDLER ==================
 async function handleText(from, text) {
   if (!user_states[from]) {
-    return sendImageWithButtons(from);
+    return sendGreeting(from);
   }
 
   switch (user_states[from]) {
@@ -114,7 +113,6 @@ async function handleText(from, text) {
     case "app_link":
       user_answers[from].app_link = text;
       user_states[from] = "revenue";
-      // Ask revenue source buttons
       await sendMessage(from, {
         type: "interactive",
         interactive: {
@@ -168,7 +166,7 @@ async function handleText(from, text) {
       break;
 
     default:
-      await sendImageWithButtons(from);
+      await sendGreeting(from);
       break;
   }
 }
