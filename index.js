@@ -45,10 +45,10 @@ async function sendWelcome(to) {
         type: "button",
         header: {
           type: "image",
-          image: { link: "https://example.com/company-logo.jpg" }, // replace
+          image: { link: "https://www.kalagato.ai/logo.png" }, // replace
         },
         body: {
-          text: "🏢 Welcome to MyCompany!\n\nWe help you sell and evaluate apps professionally.",
+          text: "🏢 Welcome to KalaGato!\n\nWe help you sell and evaluate apps professionally.",
         },
         action: {
           buttons: [{ type: "reply", reply: { id: "sell", title: "Sell" } }],
@@ -61,9 +61,9 @@ async function sendWelcome(to) {
   // Links
   await sendText(
     to,
-    "📊 Use our Valuation Calculator:\nhttps://yourdomain.com/valuation"
+    "📊 Use our Valuation Calculator:\nhttps://www.kalagato.ai/app-valuation-calculator"
   );
-  await sendText(to, "🌐 Visit our website:\nhttps://yourdomain.com");
+  await sendText(to, "🌐 Visit our website:\nhttp://kalagato.ai/");
 }
 
 // ✅ Ask revenue source
